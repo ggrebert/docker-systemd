@@ -7,6 +7,7 @@ ARG user=ansible
 RUN apt-get update && apt-get install -qqy \
         systemd \
         dbus \
+        sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -26,13 +27,13 @@ VOLUME [ "/sys/fs/cgroup", "/run" ]
 #CMD [ "/lib/systemd/systemd" ]
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=journal 3>&1"]
 
-# SSH
-RUN useradd --create-home ${user} -s /bin/bash
+# Create user
+RUN useradd --create-home ${user} -s /bin/bash && \
+    echo "${user} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
+# SSH
 RUN apt-get update && \
-    apt-get install -qqy \
-        openssh-server \
-        sudo && \
+    apt-get install -qqy openssh-server && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     systemctl enable ssh.service && \
