@@ -30,9 +30,11 @@ RUN yum -y install \
     ln -s /usr/lib/systemd/system/systemd-user-sessions.service /etc/systemd/system/default.target.wants/systemd-user-sessions.service
 
 COPY keys/ansible.pub /home/${user}/.ssh/authorized_keys
+COPY keys/ansible.pub /root/.ssh/authorized_keys
 
 RUN chmod 700 /home/${user}/.ssh && \
     chmod 600 /home/${user}/.ssh/authorized_keys && \
+    chmod 600 /root/.ssh/authorized_keys && \
     chown -R ${user}:${user} /home/${user}/.ssh && \
     sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd && \
     echo "ansible:password" | chpasswd && \
