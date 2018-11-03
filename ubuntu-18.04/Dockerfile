@@ -11,6 +11,18 @@ RUN apt-get update && apt-get install -qqy \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Configure systemd.
+
+# For running systemd inside a Docker container, some additional tweaks are
+# required. For a detailed list see:
+#
+# https://developers.redhat.com/blog/2016/09/13/running-systemd-in-a-non-privileged-container/
+ENV container docker
+
+# A different stop signal is required, so systemd will initiate a shutdown when
+# running 'docker stop <container>'.
+STOPSIGNAL SIGRTMIN+3
+
 # Don't start any optional services except for the few we need.
 RUN find /etc/systemd/system \
     /lib/systemd/system \
@@ -22,8 +34,14 @@ RUN find /etc/systemd/system \
 
 RUN systemctl set-default multi-user.target
 
-VOLUME [ "/sys/fs/cgroup", "/run" ]
+# The host's cgroup filesystem need's to be mounted (read-only) in the
+# container. '/run', '/run/lock' and '/tmp' need to be tmpfs filesystems when
+# running the container without 'CAP_SYS_ADMIN'.
+VOLUME [ "/sys/fs/cgroup", "/run", "/run/lock", "/tmp" ]
 
+# As this image should run systemd, the default command will be changed to start
+# the init system. CMD will be preferred in favor of ENTRYPOINT, so one may
+# override it when creating the container to e.g. to run a bash console instead.
 #CMD [ "/lib/systemd/systemd" ]
 CMD ["/bin/bash", "-c", "exec /sbin/init --log-target=journal 3>&1"]
 
