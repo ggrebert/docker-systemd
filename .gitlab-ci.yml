@@ -1,5 +1,23 @@
 stages:
+  - test
   - build
+
+.test: &test
+  stage: test
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    # init
+    - export system=$( echo ${CI_JOB_NAME} | awk '{print $2}' )
+    - export version=$( echo ${CI_JOB_NAME} | awk '{print $3}' )
+    # install dependencies
+    - apk add --update python py-pip python-dev
+    - pip install docker-compose
+    # build
+    - docker-compose up --build --exit-code-from test
+  tags:
+    - systemd
 
 .build: &build
   stage: build
@@ -14,6 +32,12 @@ stages:
     - docker push ${CI_REGISTRY_IMAGE}/${system}:${version}
   only:
     - master
+
+test ubuntu 16.04: *test
+test ubuntu 18.04: *test
+test debian 8: *test
+test debian 9: *test
+test centos 7: *test
 
 build ubuntu 16.04: *build
 build ubuntu 18.04: *build

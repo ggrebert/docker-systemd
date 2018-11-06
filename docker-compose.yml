@@ -1,0 +1,24 @@
+version: "2"
+
+services:
+
+  server:
+    build:
+      context: .
+      dockerfile: ${system}-${version}/Dockerfile
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
+    security_opt:
+      - seccomp:unconfined
+
+  test:
+    build:
+      context: .
+      dockerfile: test/Dockerfile
+    depends_on:
+      - server
+
